@@ -20,7 +20,9 @@
   .row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px dotted var(--line);padding:7px 0}
   .row:last-child{border-bottom:0}
   .row b{font-weight:600}
-  .price{color:var(--dim);white-space:nowrap}
+  .row>.item{flex:1 1 auto;min-width:0}
+  .desc{color:var(--dim)}
+  .price{color:var(--dim);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;flex:0 0 auto}
   .addr{font-style:normal;line-height:1.5}
   audio{width:100%;margin-top:6px}
   a{color:var(--sea);text-decoration:none;border-bottom:1px solid rgba(47,111,107,.35)}
@@ -59,11 +61,11 @@
 
   <h2>Menu (text, so it loads on any phone)</h2>
   <div class="card">
-    <div class="row"><span><b>Filter coffee</b><br><span class="price">house blend, refill half price</span></span><span class="price">£2.40</span></div>
-    <div class="row"><span><b>Pot of tea</b><br><span class="price">English breakfast, peppermint, rooibos</span></span><span class="price">£2.80</span></div>
-    <div class="row"><span><b>Bacon roll</b><br><span class="price">smoked back bacon, white or brown</span></span><span class="price">£4.80</span></div>
-    <div class="row"><span><b>River breakfast</b><br><span class="price">eggs, toast, tomato, mushrooms</span></span><span class="price">£8.50</span></div>
-    <div class="row"><span><b>Toast &amp; jam</b><br><span class="price">seeded bloomer, two slices</span></span><span class="price">£2.80</span></div>
+    <div class="row"><span class="item"><b>Filter coffee</b><br><span class="desc">house blend, refill half price</span></span><span class="price">£2.40</span></div>
+    <div class="row"><span class="item"><b>Pot of tea</b><br><span class="desc">English breakfast, peppermint, rooibos</span></span><span class="price">£2.80</span></div>
+    <div class="row"><span class="item"><b>Bacon roll</b><br><span class="desc">smoked back bacon, white or brown</span></span><span class="price">£4.80</span></div>
+    <div class="row"><span class="item"><b>River breakfast</b><br><span class="desc">eggs, toast, tomato, mushrooms</span></span><span class="price">£8.50</span></div>
+    <div class="row"><span class="item"><b>Toast &amp; jam</b><br><span class="desc">seeded bloomer, two slices</span></span><span class="price">£2.80</span></div>
   </div>
 
   <h2>Find us</h2>
