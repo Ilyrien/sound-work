@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audio check — dead head, peak, loop seam, bands, in your browser</title>
+<meta name="description" content="Drop an audio file and see what a delivered file actually does: dead frames at the head and tail, sample peak, DC, the loop wrap step against the material's own steps, and octave-band energy. Nothing is uploaded; it all runs in this tab.">
+<style>
+  :root{--ink:#14110f;--dim:#6b6259;--paper:#f4efe7;--line:#d8cfc2;--warm:#b8752e;--bad:#a3392b;--good:#3f6b3a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 ui-serif,Georgia,"Times New Roman",serif}
+  .wrap{max-width:760px;margin:0 auto;padding:44px 22px 80px}
+  h1{font-size:clamp(26px,5vw,38px);line-height:1.12;margin:0 0 8px}
+  .sub{color:var(--dim);font-size:18px;margin:0 0 28px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--warm);margin:38px 0 10px;font-family:ui-sans-serif,system-ui,sans-serif}
+  p{margin:0 0 12px}
+  a{color:var(--warm);text-decoration:none;border-bottom:1px solid rgba(184,117,46,.35)}
+  a:hover{border-bottom-color:var(--warm)}
+  code{font:14px ui-monospace,Menlo,Consolas,monospace;background:#efe8dc;padding:1px 5px;border-radius:4px}
+  #drop{border:2px dashed var(--line);border-radius:12px;padding:34px 20px;text-align:center;color:var(--dim);cursor:pointer;background:#fbf8f2;transition:.15s}
+  #drop:hover,#drop.over{border-color:var(--warm);color:var(--ink);background:#fffdf8}
+  #drop b{color:var(--ink)}
+  button{font:inherit;background:var(--ink);color:var(--paper);border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+  .card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:#fbf8f2;margin:0 0 14px}
+  table{border-collapse:collapse;width:100%;font:15px/1.5 ui-sans-serif,system-ui,sans-serif}
+  td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+  td:first-child{color:var(--dim);width:44%}
+  td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .v{padding:9px 12px;border-left:3px solid var(--line);margin:0 0 8px;border-radius:0 6px 6px 0;background:#fbf8f2;font-size:16px}
+  .v.warn{border-color:var(--bad)}
+  .v.ok{border-color:var(--good)}
+  .v.note{border-color:var(--warm)}
+  .v .tag{font:11px ui-sans-serif,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block}
+  canvas{width:100%;height:150px;display:block;background:#fffdf8;border:1px solid var(--line);border-radius:8px}
+  .bands{margin:8px 0 0}
+  .bar{display:flex;align-items:center;gap:8px;font:12px ui-monospace,Menlo,monospace;color:var(--dim);margin:2px 0}
+  .bar span:first-child{width:52px;text-align:right}
+  .bar .track{flex:1;height:9px;background:#efe8dc;border-radius:3px;overflow:hidden;position:relative}
+  .bar .fill{height:100%;background:var(--warm);opacity:.75}
+  .bar span:last-child{width:64px;text-align:right}
+  .note{color:var(--dim);font-size:15px}
+  ul{padding-left:20px}
+  .sig{margin-top:40px;color:var(--dim);font-size:15px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>What does your delivered file actually do?</h1>
+  <p class="sub">Drop an audio file. Get the things that go wrong after the mix sounds right in the DAW: dead frames at the head, a wrap step where it loops, a short event pinned to the ceiling, DC, and where the top end sits.</p>
+
+  <div id="drop">
+    <p style="margin:0 0 6px"><b>Drop a file here</b> or click to choose</p>
+    <p class="note" id="hint" style="margin:0">wav, mp3, ogg, m4a, flac. Nothing is uploaded. Every number below is computed in this tab.</p>
+    <input id="file" type="file" accept="audio/*" class="hide">
+  </div>
+
+  <div id="out" class="hide">
+    <h2>The file</h2>
+    <div class="card"><table id="facts"></table></div>
+
+    <h2>Findings</h2>
+    <div id="verdicts"></div>
+
+    <h2>Level over time</h2>
+    <canvas id="wave" width="1440" height="300"></canvas>
+    <p class="note" id="waveNote" style="margin-top:6px"></p>
+
+    <h2>Where the energy sits</h2>
+    <div id="bands" class="bands"></div>
+    <p class="note">Octave bands, dBFS, averaged over <span id="frames">—</span> windows. Read them as a shape, not as a master.</p>
+
+    <h2>What this cannot see</h2>
+    <p class="note">No true-peak oversampling (this is the sample peak; a codec can overshoot it), no LUFS, no listening. It judges a loop by the material's own steps, so a click the material makes everywhere else will not be called a fault. And it measures what the decoder in your browser hands back: most decoders trim an mp3's encoder delay, so an mp3 can hide its dead head from this page and still have it in another player. If you are shipping a loop, deliver a wav.</p>
+  </div>
+
+  <h2>Why this exists</h2>
+  <p>Twice now a peer measured a file I had shipped and found a fault my own ruler had missed: 28.8 ms of exact silence at the head of an mp3, and before that a check of mine that quietly cropped its input and invented a seam. Both faults were in the delivered file, not in the mix. So here is the ruler, public, with its gates printed next to it.</p>
+  <p class="note">I'm Ilyrien. I build place-specific soundscapes and cue sets, and I measure every one before it ships. If this finds something you would rather not fix yourself, that is the work I do: <a href="mailto:ilyrien@ilands.app?subject=Audio%20fix%20from%20the%20check&body=The%20file%20and%20what%20the%20check%20said%3A%20%0AWhere%20it%20will%20play%3A%20%0A">one email, two lines</a>. <a href="../">Everything else I make is here.</a></p>
+
+  <p class="sig">No accounts, no uploads, no cookies. The file never leaves your machine.</p>
+</div>
+
+<script src="analyze.js"></script>
+<script>
+(function(){
+  var drop=document.getElementById('drop'), input=document.getElementById('file'),
+      out=document.getElementById('out'), hint=document.getElementById('hint');
+
+  drop.addEventListener('click', function(){ input.click(); });
+  input.addEventListener('change', function(){ if (input.files[0]) run(input.files[0]); });
+  ['dragenter','dragover'].forEach(function(e){ drop.addEventListener(e, function(ev){ ev.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(e){ drop.addEventListener(e, function(ev){ ev.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function(ev){ var f=ev.dataTransfer.files[0]; if (f) run(f); });
+
+  function fmtDb(x){ return (x>0?'+':'') + x.toFixed(1) + ' dBFS'; }
+
+  function run(file){
+    hint.textContent = 'Reading ' + file.name + '…';
+    file.arrayBuffer().then(function(buf){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var ctx = new AC();
+      return ctx.decodeAudioData(buf).then(function(ab){ ctx.close(); return ab; });
+    }).then(function(ab){
+      var chans = AudioCheck.channelsOf(ab);
+      var r = AudioCheck.analyze(chans, ab.sampleRate);
+      render(file, r, chans);
+    }).catch(function(err){
+      hint.textContent = 'That file would not decode here: ' + (err && err.message ? err.message : err) + '. Try a wav export.';
+    });
+  }
+
+  function render(file, r, chans){
+    document.getElementById('drop').classList.add('hide');
+    out.classList.remove('hide');
+
+    var rows = [
+      ['file', file.name + ' (' + Math.round(file.size/1024) + ' KB)'],
+      ['decoded', r.channels + ' ch, ' + (r.sampleRate/1000).toFixed(1) + ' kHz, ' + r.durationSec.toFixed(3) + ' s'],
+      ['sample peak', fmtDb(r.peakDb)],
+      ['whole-file RMS', fmtDb(r.rmsDb)],
+      ['loudest 20 ms', fmtDb(r.crest.shortTermPeakDb) + ' at ' + r.crest.atSec.toFixed(2) + ' s'],
+      ['crest (20 ms peak over RMS)', r.crest.crestDb.toFixed(1) + ' dB'],
+      ['dead head', r.ends.headZeroMs.toFixed(1) + ' ms exact zeros · ' + r.ends.headQuietMs.toFixed(1) + ' ms under ' + r.ends.quietThresholdDb + ' dBFS'],
+      ['dead tail', r.ends.tailZeroMs.toFixed(1) + ' ms exact zeros · ' + r.ends.tailQuietMs.toFixed(1) + ' ms under ' + r.ends.quietThresholdDb + ' dBFS'],
+      ['wrap step (signed)', r.wrap.channels.map(function(c,i){ return 'ch'+(i+1)+' ' + c.signedStep.toFixed(4); }).join(' · ')],
+      ['wrap step vs the file\'s own end steps', r.wrap.worstVsLocalDb.toFixed(1) + ' dB (over = harder than the material itself)'],
+      ['DC', r.dc.map(function(d){ return (20*Math.log10(Math.max(Math.abs(d),1e-9))).toFixed(1) + ' dBFS'; }).join(' · ')]
+    ];
+    document.getElementById('facts').innerHTML = rows.map(function(x){
+      return '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td></tr>';
+    }).join('');
+
+    document.getElementById('verdicts').innerHTML = r.verdicts.map(function(v){
+      return '<div class="v ' + v.level + '"><span class="tag">' + v.level + '</span>' + v.text + '</div>';
+    }).join('');
+
+    document.getElementById('frames').textContent = r.spectrum.frames;
+    var bands = r.spectrum.bands, floor = -90;
+    document.getElementById('bands').innerHTML = bands.map(function(b){
+      var pct = Math.max(0, Math.min(100, (b.db - floor) / (0 - floor) * 100));
+      return '<div class="bar"><span>' + Math.round(b.center) + (b.center>=1000?'k':'') + '</span>' +
+             '<span class="track"><span class="fill" style="width:' + pct.toFixed(1) + '%"></span></span>' +
+             '<span>' + b.db.toFixed(1) + '</span></div>';
+    }).join('');
+
+    draw(chans, r);
+  }
+
+  function draw(chans, r){
+    var c = document.getElementById('wave'), g = c.getContext('2d');
+    var W = c.width, H = c.height, d = chans[0], n = d.length, cols = W, floor = -72;
+    g.clearRect(0,0,W,H);
+    // grid
+    g.strokeStyle = '#e6dfd2'; g.fillStyle = '#9a9086'; g.font = '18px ui-monospace,monospace';
+    [0,-6,-12,-24,-48].forEach(function(db){
+      var y = (db - 0) / (floor - 0) * H;
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+      g.fillText(db + ' dB', 6, Math.max(16, y - 5));
+    });
+    // envelope in dB per column
+    var per = Math.max(1, Math.floor(n / cols)), vals = [];
+    for (var x = 0; x < cols; x++){
+      var m = 0, s = x*per, e = Math.min(n, s+per);
+      for (var i = s; i < e; i++){
+        var a = Math.abs(d[i]);
+        if (a > m) m = a;
+      }
+      vals.push(m);
+    }
+    g.beginPath(); g.moveTo(0, H);
+    for (var x2 = 0; x2 < cols; x2++){
+      var db = 20*Math.log10(Math.max(vals[x2], 1e-9));
+      var y = Math.max(0, Math.min(H, (db - 0)/(floor - 0)*H));
+      g.lineTo(x2, y);
+    }
+    g.lineTo(cols-1, H); g.closePath();
+    g.fillStyle = 'rgba(184,117,46,.32)'; g.fill();
+    g.strokeStyle = '#b8752e'; g.lineWidth = 1.5; g.stroke();
+
+    // dead head / tail markers
+    if (r.ends.headZeroFrames > 0){
+      var hw = Math.max(2, r.ends.headZeroFrames / n * W);
+      g.fillStyle = 'rgba(163,57,43,.25)'; g.fillRect(0,0,hw,H);
+    }
+    if (r.ends.tailZeroFrames > 0){
+      var tw = Math.max(2, r.ends.tailZeroFrames / n * W);
+      g.fillStyle = 'rgba(163,57,43,.25)'; g.fillRect(W-tw,0,tw,H);
+    }
+    document.getElementById('waveNote').textContent =
+      'Peak envelope, ' + cols + ' columns, dBFS. Red edges are frames of exact digital silence (' +
+      r.ends.headZeroMs.toFixed(1) + ' ms head, ' + r.ends.tailZeroMs.toFixed(1) + ' ms tail).';
+  }
+})();
+</script>
+</body>
+</html>
