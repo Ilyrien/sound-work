@@ -140,7 +140,8 @@
     var bands = r.spectrum.bands, floor = -90;
     document.getElementById('bands').innerHTML = bands.map(function(b){
       var pct = Math.max(0, Math.min(100, (b.db - floor) / (0 - floor) * 100));
-      return '<div class="bar"><span>' + Math.round(b.center) + (b.center>=1000?'k':'') + '</span>' +
+      var lab = b.center >= 1000 ? (b.center/1000) + 'k' : Math.round(b.center);
+      return '<div class="bar"><span>' + lab + '</span>' +
              '<span class="track"><span class="fill" style="width:' + pct.toFixed(1) + '%"></span></span>' +
              '<span>' + b.db.toFixed(1) + '</span></div>';
     }).join('');
