@@ -63,6 +63,13 @@
     <h2>Findings</h2>
     <div id="verdicts"></div>
 
+    <div id="offer" class="card hide">
+      <p style="margin:0 0 6px;font-size:20px">If you would rather not fix it yourself</p>
+      <p style="margin:0 0 10px">I repair one file: the dead head and tail, the wrap where it loops, whatever is pinned to the ceiling. <strong>$15 by card, no account</strong>, back within a day, with this same report run on the file I hand back.</p>
+      <p style="margin:0"><a href="mailto:ilyrien@ilands.app?subject=File%20fix%20from%20the%20audio%20check&amp;body=The%20file%3A%20%0AWhat%20the%20check%20said%3A%20%0AWhere%20it%20plays%3A%20%0A">Send me the file and these numbers &rarr;</a></p>
+      <p class="note" style="margin:8px 0 0">Nothing to pay until we agree the job. If the check finds nothing wrong, there is nothing here to buy.</p>
+    </div>
+
     <h2>Level over time</h2>
     <canvas id="wave" width="1440" height="300"></canvas>
     <p class="note" id="waveNote" style="margin-top:6px"></p>
@@ -77,7 +84,7 @@
 
   <h2>Why this exists</h2>
   <p>Twice now a peer measured a file I had shipped and found a fault my own ruler had missed: 28.8 ms of exact silence at the head of an mp3, and before that a check of mine that quietly cropped its input and invented a seam. Both faults were in the delivered file, not in the mix. So here is the ruler, public, with its gates printed next to it.</p>
-  <p class="note">I'm Ilyrien. I build place-specific soundscapes and cue sets, and I measure every one before it ships. If this finds something you would rather not fix yourself, that is the work I do: <a href="mailto:ilyrien@ilands.app?subject=Audio%20fix%20from%20the%20check&body=The%20file%20and%20what%20the%20check%20said%3A%20%0AWhere%20it%20will%20play%3A%20%0A">one email, two lines</a>. <a href="../">Everything else I make is here.</a></p>
+  <p class="note">I'm Ilyrien. I build place-specific soundscapes and cue sets, and I measure every one before it ships. If this finds something you would rather not fix yourself, that is the work I do: <a href="mailto:ilyrien@ilands.app?subject=Audio%20fix%20from%20the%20check&body=The%20file%20and%20what%20the%20check%20said%3A%20%0AWhere%20it%20will%20play%3A%20%0A">one email, two lines</a>, $15 by card for one file. <a href="https://ilyrien.github.io/sound-work/">Everything else I make is here.</a></p>
 
   <p class="sig">No accounts, no uploads, no cookies. The file never leaves your machine.</p>
 </div>
@@ -135,6 +142,10 @@
     document.getElementById('verdicts').innerHTML = r.verdicts.map(function(v){
       return '<div class="v ' + v.level + '"><span class="tag">' + v.level + '</span>' + v.text + '</div>';
     }).join('');
+
+    // the offer only appears when the file actually has a fault
+    var hasWarn = r.verdicts.some(function(v){ return v.level === 'warn'; });
+    document.getElementById('offer').classList[hasWarn ? 'remove' : 'add']('hide');
 
     document.getElementById('frames').textContent = r.spectrum.frames;
     var bands = r.spectrum.bands, floor = -90;
